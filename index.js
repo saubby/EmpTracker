@@ -209,48 +209,42 @@ function addDepartment() {
 
 function addRole() {
     
-
-    const choicedept = () =>
-        conn.promise().query(`SELECT * FROM department`)
-            .then((rows) => {
-                let arraynm = rows[0].map(obj => obj.name);
-                return arraynm
-            })
-    inquirer.prompt([
-
-        {
-            type: "input",
-            name: "title",
-            message: "Enter name of new role"
-        },
-
-        {
-            type: "input",
-            name: "salary",
-            message: "Enter salary for this role"
-        },
-
-        {
-            type: "choice",
+    conn.query("SELECT role.title AS title, role.salary AS salary, role.department_id AS department_id  FROM role",   function(err, res) {
+        inquirer.prompt([
+            {
+              name: "title",
+              type: "input",
+              message: "What is the title of the role?"
+            },
+            {
+              name: "salary",
+              type: "input",
+              message: "What is the Salary fot this role?"
+    
+            }, 
+          {
             name: "department_id",
-            message: "Department id for this role is?",
-            choice: choicedept()
-        }
-    ]).then(result => {
-        conn.promise().query("INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)", 
-        [result.title, result.salary, result.department_id])
-
-            /*.then(ans => {
-                let mapId = ans[0].map(obj => obj.id);
-                return mapId[0]
-            })*/
-
-            .then((mapId) => {
-                conn.promise().query(`INSERT INTO role(title, salary, department_id) VALUE(?,?,?)`,
-                    [result.title, result.salary, mapId]);
-                firstp()
-            })
-    })
+            type: "choices",
+            message: "Enter the department id for this role"
+          }
+        
+        ]).then(function(res) {
+            conn.query(
+                "INSERT INTO role SET ?",
+                {
+                  title: res.title,
+                  salary: res.salary,
+                department_id: res.department_id
+                },
+                function(err) {
+                    if (err) throw err
+                    console.table(res);
+                    firstp();
+                }
+            )
+    
+        });
+      })
 }
 
 function updateRole() {
