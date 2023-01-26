@@ -16,7 +16,7 @@ const conn = mysql.createConnection({
 conn.connect(err => {
 
     if (err) throw err;
-    
+
     console.log("MySql Connected");
 
     firstp();
@@ -43,54 +43,54 @@ function firstp() {
         }
     ])
         .then(response => {
-        console.log(response.choice);
-            
+            console.log(response.choice);
+
             switch (response.choice) {
 
-            case 'View all employees':
-                viewEmployees();
-                break;
+                case 'View all employees':
+                    viewEmployees()
+                    break;
 
-            case 'View all departments':
-                viewDepartments();
-                break;
+                case 'View all departments':
+                    viewDepartments()
+                    break;
 
-            case 'View all roles':
-                viewRoles();
-                break;
+                case 'View all roles':
+                    viewRoles()
+                    break;
 
-            case 'Add an employee':
-                addEmployee();
-                break;
+                case 'Add an employee':
+                    addEmployee()
+                    break;
 
-            case 'Add a department':
-                addDepartment();
-                break;
+                case 'Add a department':
+                    addDepartment()
+                    break;
 
-            case 'Add a role':
-                addRole();
-                break;
+                case 'Add a role':
+                    addRole()
+                    break;
 
-            case 'Update an employee role':
-                updateRole();
-                break;
+                case 'Update an employee role':
+                    updateRole()
+                    break;
 
-            case 'Exit':
-                conn.end();
-                break;
+                case 'Exit':
+                    conn.end()
+                    break;
 
-        }
+            }
 
-    })
+        })
     //.catch(err =>
-      //  console.error(err));
+    //  console.error(err));
 }
 
 
 
 function viewEmployees() {
     console.log('Employee View');
-        conn.query('SELECT * FROM employee', (error, result) => {
+    conn.query('SELECT * FROM employee', (error, result) => {
         if (error) throw error;
         console.table(result);
         firstp();
@@ -103,7 +103,7 @@ function viewDepartments() {
         if (error) throw error;
         console.table(result);
         firstp();
-        })
+    })
 
 };
 
@@ -114,12 +114,27 @@ function viewRoles() {
         if (error) throw error;
         console.table(result);
         firstp();
-        })
+    })
 };
 
 
 
-function addEmployee() {
+async function addEmployee() {
+    const [roles] = await conn.promise().query("SELECT * FROM role")
+    let rolearr = roles.map(role => (
+        {
+            name: role.title,
+            value: role.id
+        }
+    ))
+
+    const [employees] = await conn.promise().query("SELECT * FROM employee")
+    let managerarr = employees.map(employee => (
+        {
+            name: employee.first_name + " " + employee.last_name,
+            value: employee.id
+        }
+    ))
 
     inquirer.prompt([
 
@@ -138,42 +153,35 @@ function addEmployee() {
         {
             name: 'role',
             type: 'list',
-            message: 'Enter role',
-            //choices: getRoles()
+            message: 'Select employee role',
+            choices: rolearr
         },
 
         {
             name: 'manager',
             type: 'list',
-            message: 'Select manager',
-            //choices: getManagers()
+            message: 'Select manager.',
+            choices: managerarr
         }
 
     ])
-        .then(response => {
+    .then(function (response) {
+        conn.query("INSERT INTO employee (first_name,last_name,role_id,manager_id) VALUES (?, ?, ?, ?)",
+        [response.firstName, response.lastName, response.role, response.manager], 
+        function (error) {
+            if (error) throw error;
+            console.log('The new employee entered has been added successfully to the database.');
 
-            conn.query('INSERT INTO employee SET ?', {
-                first_name: response.firstName,
-                last_name: response.lastName,
-                role_id: response.role,
-                manager_id: response.manager
-        },
-        
-            (err, res) => {
-                if (err) throw err;
-                // {
-                  //  console.log(err)
-                //}
-
-                //else {
-                   // conn.query = 'SELECT * FROM Employee',  (err, res) => {
-                     //       if (err) throw err; 
-                       //     console.table(res);
-                            firstp();
-                        }
-                //}
-            )
-    })
+            conn.query(`SELECT * FROM employee`, (err, result) => {
+                if (err) {
+                    res.status(500).json({ error: err.message })
+                    firstp();
+                }
+                console.table(result);
+                firstp();
+            });
+        })
+});
 }
 
 
@@ -207,45 +215,63 @@ function addDepartment() {
 }
 
 
-function addRole() {
-    
-    conn.query("SELECT role.title AS title, role.salary AS salary, role.department_id AS department_id  FROM role",   function(err, res) {
+async function addRole() {
+
+    const [addroles] = await conn.promise().query("SELECT * FROM role")
+    let addrolearr = addroles.map(role => (
+        {
+            name: role.title,
+            value: role.id
+        }
+    ))
+
+    const [departments] = await conn.promise().query("SELECT * FROM department")
+    let deptarr = departments.map(department => (
+        {
+            name: department.department_name,
+            value: department.id
+        }
+    ))
+
+    //conn.query("SELECT role.title AS title, role.salary AS salary, role.department_id AS department_id  FROM role", function (err, res) {
         inquirer.prompt([
             {
-              name: "title",
-              type: "input",
-              message: "What is the title of the role?"
+                name: "title",
+                type: "list",
+                message: "What is the title of the role?",
+                choices: addrolearr
             },
             {
-              name: "salary",
-              type: "input",
-              message: "What is the Salary fot this role?"
-    
-            }, 
-          {
-            name: "department_id",
-            type: "choices",
-            message: "Enter the department id for this role"
-          }
-        
-        ]).then(function(res) {
-            conn.query(
-                "INSERT INTO role SET ?",
+                name: "salary",
+                type: "input",
+                message: "What is the Salary fot this role?"
+
+            },
+            {
+                name: "department_name",
+                type: "list",
+                message: "Enter the department name for this role",
+                choices: deptarr
+                
+            }
+
+        ]).then(function (res) {
+            conn.query("INSERT INTO role SET ?",
                 {
-                  title: res.title,
-                  salary: res.salary,
-                department_id: res.department_id
+                    title: res.title,
+                    salary: res.salary,
+                    department_id: res.department_id
                 },
-                function(err) {
+                function (err) {
                     if (err) throw err
                     console.table(res);
                     firstp();
                 }
             )
-    
         });
-      })
-}
+    }
+   // )
+//}
 
 function updateRole() {
 
