@@ -6,7 +6,7 @@ A node.js application that uses user input from inquirer to populate an employee
 ![](./assets/image.PNG)
 
 Below is the recording showing the functionality of the program.
-![](./assets/Untitled_%20Jan%2026%2C%202023%201_04%20PM.webm)
+![](./assets/Screen.gif)
 
 ## User Story
 
@@ -40,6 +40,6 @@ THEN I am prompted to select an employee to update and their new role and this i
 
 
 
-## Deploy
+## Deployment Link
 
 https://github.com/saubby/EmpTracker
